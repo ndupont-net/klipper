@@ -211,6 +211,7 @@ usb_read_ep0(void *data, uint_fast8_t max_len)
     uint32_t grx = peek_rx_queue(0);
     if (!grx) {
         // Wait for packet
+        enable_rx_endpoint(0);
         OTG->GINTMSK |= USB_OTG_GINTMSK_RXFLVLM;
         usb_irq_enable();
         return -1;
@@ -223,7 +224,6 @@ usb_read_ep0(void *data, uint_fast8_t max_len)
         return -2;
     }
     int_fast8_t ret = fifo_read_packet(data, max_len);
-    enable_rx_endpoint(0);
     usb_irq_enable();
     return ret;
 }
@@ -263,7 +263,6 @@ usb_read_ep0_setup(void *data, uint_fast8_t max_len)
         while (OTG->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH)
             ;
     }
-    enable_rx_endpoint(0);
     EPOUT(0)->DOEPINT = USB_OTG_DOEPINT_STUP;
     usb_irq_enable();
     // Return message from previously read setup packet
@@ -281,6 +280,7 @@ usb_send_ep0(const void *data, uint_fast8_t len)
         usb_irq_enable();
         return -2;
     }
+    enable_rx_endpoint(0);
     if (EPIN(0)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
         // Wait for space to transmit
         OTG->GINTMSK |= USB_OTG_GINTMSK_RXFLVLM;
